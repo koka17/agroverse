@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Droplets, Cloud, Leaf, Thermometer, Wind, Info, Sprout } from 'lucide-react';
 import nasaData from '../data/nasaData.json';
+import FarmScene from '../components/FarmScene';
+
+type GrowthStage = 'empty' | 'seed' | 'sprout' | 'growing' | 'mature';
 
 interface DashboardScreenProps {
   onNext: () => void;
@@ -8,25 +11,54 @@ interface DashboardScreenProps {
 
 export default function DashboardScreen({ onNext }: DashboardScreenProps) {
   const [farmStatus, setFarmStatus] = useState('Your farm is ready for action');
-  const [fieldColor, setFieldColor] = useState('from-amber-700 to-yellow-800');
+  const [growthStage, setGrowthStage] = useState<GrowthStage>('empty');
+  const [isWatering, setIsWatering] = useState(false);
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
 
   const handleWater = () => {
     setFarmStatus('Crops watered! Soil moisture improved.');
-    setFieldColor('from-green-600 to-emerald-700');
-    setTimeout(() => setFarmStatus('Your farm is healthy'), 2000);
+    setIsWatering(true);
+
+    if (growthStage === 'seed') {
+      setTimeout(() => {
+        setGrowthStage('sprout');
+        setFarmStatus('Seeds are sprouting!');
+      }, 1500);
+    } else if (growthStage === 'sprout') {
+      setTimeout(() => {
+        setGrowthStage('growing');
+        setFarmStatus('Crops are growing nicely!');
+      }, 1500);
+    } else if (growthStage === 'growing') {
+      setTimeout(() => {
+        setGrowthStage('mature');
+        setFarmStatus('Crops are fully grown and ready to harvest!');
+      }, 1500);
+    }
+
+    setTimeout(() => {
+      setIsWatering(false);
+      if (growthStage === 'mature') {
+        setFarmStatus('Your farm is healthy');
+      }
+    }, 3000);
   };
 
   const handlePlant = () => {
-    setFarmStatus('Seeds planted! Watch them grow with proper care.');
-    setFieldColor('from-lime-600 to-green-700');
-    setTimeout(() => setFarmStatus('Your farm is healthy'), 2000);
+    setFarmStatus('Seeds planted! Water them to see them grow.');
+    setGrowthStage('seed');
+    setTimeout(() => setFarmStatus('Seeds need water to sprout'), 2000);
   };
 
   const handleHarvest = () => {
-    setFarmStatus('Harvest complete! Great yield this season.');
-    setFieldColor('from-amber-600 to-orange-700');
-    setTimeout(() => setFarmStatus('Ready to plant again'), 2000);
+    if (growthStage === 'mature') {
+      setFarmStatus('Harvest complete! Great yield this season.');
+      setGrowthStage('empty');
+      setTimeout(() => setFarmStatus('Ready to plant again'), 2000);
+    } else {
+      setFarmStatus('Crops are not ready for harvest yet!');
+      setTimeout(() => setFarmStatus('Keep watering your crops'), 2000);
+    }
   };
 
   const dataCards = [
@@ -85,12 +117,7 @@ export default function DashboardScreen({ onNext }: DashboardScreenProps) {
             <div className="bg-white rounded-3xl shadow-lg p-8 border border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900 mb-4">Your Virtual Farm</h2>
 
-              <div className={`w-full h-64 bg-gradient-to-br ${fieldColor} rounded-2xl mb-6 flex items-center justify-center transition-all duration-500 shadow-inner`}>
-                <div className="text-center">
-                  <Leaf className="w-16 h-16 text-white/80 mx-auto mb-2" />
-                  <p className="text-white font-semibold text-lg">Farm Field</p>
-                </div>
-              </div>
+              <FarmScene stage={growthStage} isWatering={isWatering} />
 
               <div className="bg-slate-50 rounded-xl p-4 mb-6">
                 <p className="text-slate-700 text-center font-medium">{farmStatus}</p>
